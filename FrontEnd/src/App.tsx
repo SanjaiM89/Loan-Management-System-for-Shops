@@ -1,0 +1,154 @@
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
+import Layout from './components/layout/Layout';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import CustomerList from './pages/customers/CustomerList';
+import CustomerAdd from './pages/customers/CustomerAdd';
+import CustomerDetail from './pages/customers/CustomerDetail';
+import ProductList from './pages/products/ProductList';
+import ProductAdd from './pages/products/ProductAdd';
+import CategoryList from './pages/products/CategoryList';
+import CategoryForm from './pages/products/CategoryForm';
+import ProductForm from './components/products/ProductForm';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const CategoryEdit = () => {
+  const { id } = useParams<{ id: string }>();
+  const [category, setCategory] = React.useState(null);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const fetchCategory = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/categories/${id}`);
+        setCategory(response.data);
+      } catch (error) {
+        console.error('Error fetching category:', error);
+        navigate('/products/categories');
+      }
+    };
+    fetchCategory();
+  }, [id, navigate]);
+
+  if (!category) return null;
+
+  return (
+    <CategoryForm
+      initialData={category}
+      onSubmit={async (data) => {
+        await axios.put(`http://localhost:8000/categories/${id}`, data);
+      }}
+    />
+  );
+};
+
+const ProductEdit = () => {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = React.useState(null);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/products/${id}`);
+        setProduct(response.data);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        navigate('/products');
+      }
+    };
+    fetchProduct();
+  }, [id, navigate]);
+
+  if (!product) return null;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <header>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Product</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Update product details</p>
+      </header>
+      <Card>
+        <ProductForm
+          initialData={product}
+          onSubmit={async (data) => {
+            await axios.put(`http://localhost:8000/products/${id}`, data);
+            navigate('/products');
+          }}
+        />
+      </Card>
+    </div>
+  );
+};
+
+function App() {
+  const { theme } = useTheme();
+  
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  return (
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="customers">
+            <Route index element={<CustomerList />} />
+            <Route path="add" element={<CustomerAdd />} />
+            <Route path=":id" element={<CustomerDetail />} />
+          </Route>
+          <Route path="products">
+            <Route index element={<ProductList />} />
+            <Route path="add" element={<ProductAdd />} />
+            <Route path=":id/edit" element={<ProductEdit />} />
+            <Route path="categories">
+              <Route index element={<CategoryList />} />
+              <Route path="add" element={
+                <CategoryForm 
+                  onSubmit={async (data) => {
+                    await axios.post('http://localhost:8000/categories', data);
+                  }}
+                />
+              } />
+              <Route path=":id/edit" element={<CategoryEdit />} />
+            </Route>
+          </Route>
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
+    </>
+  );
+}
+
+export default App;

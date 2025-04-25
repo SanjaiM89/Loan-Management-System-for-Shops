@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background-light text-gray-800 dark:bg-background-dark dark:text-gray-200;
+    @apply transition-colors duration-200 ease-in-out;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    line-height: 1.2;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+
+  p, li, span, button, input, select, textarea {
+    line-height: 1.5;
+  }
+
+  input, select, textarea {
+    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Smooth page transitions */
+  .page-transition-enter {
+    @apply opacity-0;
+  }
+  .page-transition-enter-active {
+    @apply opacity-100 transition-opacity duration-300;
+  }
+  .page-transition-exit {
+    @apply opacity-100;
+  }
+  .page-transition-exit-active {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md transition-all duration-300;
+    @apply dark:shadow-glass-dark border border-gray-100 dark:border-gray-800;
+    @apply hover:shadow-lg dark:hover:shadow-lg;
+    @apply transform hover:scale-[1.01] active:scale-[0.99];
+  }
+
+  .card-glass {
+    @apply bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm;
+    @apply shadow-glass dark:shadow-glass-dark border border-gray-100/50 dark:border-gray-800/50;
+    @apply rounded-lg transition-all duration-300;
+    @apply hover:shadow-lg dark:hover:shadow-lg;
+    @apply transform hover:scale-[1.01] active:scale-[0.99];
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark;
+    @apply transform hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
+    @apply active:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500;
+    @apply active:bg-secondary-700 disabled:bg-secondary-300 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-500;
+    @apply active:bg-accent-700 disabled:bg-accent-300 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply btn bg-transparent border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200;
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-gray-300 dark:focus:ring-gray-700;
+    @apply active:bg-gray-200 dark:active:bg-gray-600;
+  }
+
+  .input-group {
+    @apply mb-4;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+  }
+
+  .input-field {
+    @apply w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md;
+    @apply px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply transition-all duration-200 ease-in-out;
+    @apply transform hover:scale-[1.01] focus:scale-[1.02];
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+    @apply transition-all duration-200;
+    @apply transform hover:scale-[1.05];
+  }
+
+  .badge-success {
+    @apply badge bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-100;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-100;
+  }
+
+  .badge-error {
+    @apply badge bg-error-100 text-error-800 dark:bg-error-900 dark:text-error-100;
+  }
+
+  /* Modal/Dialog animations */
+  .modal-enter {
+    @apply opacity-0;
+  }
+  .modal-enter-active {
+    @apply opacity-100 transition-opacity duration-300;
+  }
+  .modal-exit {
+    @apply opacity-100;
+  }
+  .modal-exit-active {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+
+  /* Dropdown animations */
+  .dropdown-enter {
+    @apply transform scale-95 opacity-0;
+  }
+  .dropdown-enter-active {
+    @apply transform scale-100 opacity-100 transition-all duration-200;
+  }
+  .dropdown-exit {
+    @apply transform scale-100 opacity-100;
+  }
+  .dropdown-exit-active {
+    @apply transform scale-95 opacity-0 transition-all duration-200;
+  }
+
+  /* Success/Error message animations */
+  .message-enter {
+    @apply transform -translate-y-2 opacity-0;
+  }
+  .message-enter-active {
+    @apply transform translate-y-0 opacity-100 transition-all duration-300;
+  }
+  .message-exit {
+    @apply transform translate-y-0 opacity-100;
+  }
+  .message-exit-active {
+    @apply transform -translate-y-2 opacity-0 transition-all duration-300;
+  }
+}
