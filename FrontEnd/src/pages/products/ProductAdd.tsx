@@ -1,5 +1,5 @@
-import Card from '../ui/Card';
-import ProductForm from '../components/products/ProductForm';
+import Card from '../../components/ui/Card';
+import ProductForm from '../../components/products/ProductForm';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -13,7 +13,7 @@ const ProductAdd = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Product</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">Create a new product</p>
       </header>
-      <Card>
+      <Card title="New Product">
         <ProductForm
           onSubmit={async (data) => {
             try {

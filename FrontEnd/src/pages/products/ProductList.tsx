@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Filter, Plus, Search, Trash } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import FilterDrawer from '../ui/FilterDrawer';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import CategoryDialog from './CategoryDialog';
+import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
+import FilterDrawer from '../../components/ui/FilterDrawer';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import CategoryDialog from '../../components/products/CategoryDialog';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -39,6 +39,7 @@ const ProductList = () => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [selectedCategoryForEdit, setSelectedCategoryForEdit] = useState<Category | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; type: 'product' | 'category' | null }>({ open: false, id: null, type: null });
+  const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null }>({ startDate: null, endDate: null });
 
   const itemsPerPage = 10;
 
@@ -102,9 +103,12 @@ const ProductList = () => {
     return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
-      return matchesSearch && matchesCategory;
+      const matchesDateRange = dateRange.startDate && dateRange.endDate
+        ? new Date(product.createdAt) >= dateRange.startDate && new Date(product.createdAt) <= dateRange.endDate
+        : true;
+      return matchesSearch && matchesCategory && matchesDateRange;
     });
-  }, [products, searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory, dateRange]);
 
   const paginatedProducts = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -130,10 +134,10 @@ const ProductList = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your product catalog</p>
         </div>
         <div className="flex space-x-3">
-          <Button onClick={() => setIsCategoryDialogOpen(true)}>
+          <Button onClick={() => setIsCategoryDialogOpen(true)} variant="outline">
             Manage Categories
           </Button>
-          <Button onClick={() => navigate('/products/add')}>
+          <Button onClick={() => navigate('/products/add')} variant="primary">
             <Plus className="h-4 w-4 mr-2" /> Add Product
           </Button>
         </div>
@@ -202,7 +206,7 @@ const ProductList = () => {
                       Edit
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="accent"
                       size="small"
                       icon={<Trash className="h-4 w-4" />}
                       onClick={() => setDeleteDialog({ open: true, id: product.id, type: 'product' })}
@@ -242,9 +246,25 @@ const ProductList = () => {
       <FilterDrawer
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        categories={categories}
+        dateRange={dateRange}
+        onDateRangeChange={(dates) => setDateRange({ startDate: dates[0], endDate: dates[1] })}
+        additionalFilters={
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="input-field w-full"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
+        }
       />
 
       <CategoryDialog
@@ -264,6 +284,8 @@ const ProductList = () => {
         onConfirm={handleDelete}
         title={`Delete ${deleteDialog.type === 'product' ? 'Product' : 'Category'}`}
         message={`Are you sure you want to delete this ${deleteDialog.type === 'product' ? 'product' : 'category'}?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
       />
     </div>
   );

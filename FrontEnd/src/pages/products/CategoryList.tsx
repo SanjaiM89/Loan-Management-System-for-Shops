@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Plus, Search, Trash } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -70,7 +70,7 @@ const CategoryList = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Categories</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage product categories</p>
         </div>
-        <Button onClick={() => navigate('/products/categories/add')}>
+        <Button onClick={() => navigate('/products/categories/add')} variant="primary">
           <Plus className="h-4 w-4 mr-2" /> Add Category
         </Button>
       </header>
@@ -125,7 +125,7 @@ const CategoryList = () => {
                     Edit
                   </Button>
                   <Button
-                    variant="danger"
+                    variant="accent"
                     size="small"
                     icon={<Trash className="h-4 w-4" />}
                     onClick={() => setDeleteDialog({ open: true, id: category.id })}
@@ -145,6 +145,8 @@ const CategoryList = () => {
         onConfirm={handleDelete}
         title="Delete Category"
         message="Are you sure you want to delete this category?"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
       />
     </div>
   );

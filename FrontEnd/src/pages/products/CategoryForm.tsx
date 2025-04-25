@@ -1,153 +1,148 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Plus, Search, Trash } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import axios from 'axios';
+import Button from '../../components/ui/Button';
+import { Camera, Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-interface Category {
-  id: string;
+interface CategoryFormData {
+  id?: string;
   name: string;
   description?: string;
-  image?: string;
-  productsCount: number;
-  createdAt: string;
+  image?: string | null;
 }
 
-const CategoryList = () => {
+interface CategoryFormProps {
+  onSubmit: (categoryData: CategoryFormData) => void;
+  initialData?: CategoryFormData;
+}
+
+const CategoryForm = ({ onSubmit, initialData }: CategoryFormProps) => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [formData, setFormData] = useState<CategoryFormData>({
+    id: initialData?.id || '',
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    image: initialData?.image || null,
+  });
+  const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchCategories = async () => {
-    setIsLoading(true);
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof CategoryFormData]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormData(prev => ({ ...prev, image: event.target.result as string }));
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Partial<CategoryFormData> = {};
+    if (!formData.name.trim()) newErrors.name = 'Category name is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
     try {
-      const response = await axios.get('http://localhost:8000/categories');
-      setCategories(response.data);
+      await onSubmit({
+        id: formData.id,
+        name: formData.name,
+        description: formData.description || undefined,
+        image: formData.image || undefined,
+      });
+      toast.success(initialData ? 'Category updated' : 'Category created');
+      navigate('/products/categories');
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
+      console.error('Error submitting category:', error);
+      toast.error('Failed to save category');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const handleDelete = async () => {
-    if (!deleteDialog.id) return;
-    try {
-      await axios.delete(`http://localhost:8000/categories/${deleteDialog.id}`);
-      toast.success('Category deleted');
-      fetchCategories();
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
-    }
-    setDeleteDialog({ open: false, id: null });
-  };
-
-  const filteredCategories = useMemo(() => {
-    return categories.filter(category =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [categories, searchQuery]);
-
-  if (isLoading) {
-    return <div className="text-center p-6">Loading...</div>;
-  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Categories</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage product categories</p>
-        </div>
-        <Button onClick={() => navigate('/products/categories/add')}>
-          <Plus className="h-4 w-4 mr-2" /> Add Category
-        </Button>
-      </header>
-
-      <Card>
-        <div className="p-4">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="mb-6 flex flex-col items-center">
+        <div className="relative mb-4">
+          <div className="w-32 h-32 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600">
+            {formData.image ? (
+              <img src={formData.image} alt="Category" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="h-12 w-12 text-gray-400" />
+            )}
+          </div>
+          <label htmlFor="image" className="absolute bottom-0 right-0 bg-primary-500 text-white p-2 rounded-full cursor-pointer hover:bg-primary-600 transition-colors">
+            <Upload className="h-4 w-4" />
             <input
-              type="text"
-              placeholder="Search categories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full input-field"
+              type="file"
+              id="image"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
             />
-          </div>
+          </label>
         </div>
-
-        {filteredCategories.length === 0 ? (
-          <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-            No categories found matching your criteria
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-            {filteredCategories.map(category => (
-              <Card key={category.id} className="flex flex-col">
-                <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
-                  {category.image ? (
-                    <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                      No Image
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 flex-grow">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{category.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {category.description || 'No description'}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    {category.productsCount} products
-                  </p>
-                </div>
-                <div className="p-4 flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    size="small"
-                    icon={<Edit className="h-4 w-4" />}
-                    onClick={() => navigate(`/products/categories/${category.id}/edit`)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="small"
-                    icon={<Trash className="h-4 w-4" />}
-                    onClick={() => setDeleteDialog({ open: true, id: category.id })}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <ConfirmDialog
-        isOpen={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
-        onConfirm={handleDelete}
-        title="Delete Category"
-        message="Are you sure you want to delete this category?"
-      />
-    </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Upload category image (optional)</p>
+      </div>
+      <div className="input-group">
+        <label htmlFor="name" className="input-label">
+          Category Name <span className="text-error-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className={`input-field ${errors.name ? 'border-error-500 focus:ring-error-500' : ''}`}
+          placeholder="Electronics"
+        />
+        {errors.name && <p className="mt-1 text-sm text-error-500">{errors.name}</p>}
+      </div>
+      <div className="input-group">
+        <label htmlFor="description" className="input-label">
+          Description
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description || ''}
+          onChange={handleChange}
+          className="input-field"
+          placeholder="Category description..."
+          rows={4}
+        />
+      </div>
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate('/products/categories')}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" isLoading={isSubmitting}>
+          Save Category
+        </Button>
+      </div>
+    </form>
   );
 };
 
-export default CategoryList;
+export default CategoryForm;

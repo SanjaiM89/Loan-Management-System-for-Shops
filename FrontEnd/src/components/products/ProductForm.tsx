@@ -1,3 +1,4 @@
+// src/components/products/ProductForm.tsx
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
@@ -205,7 +206,7 @@ const ProductForm = ({ onSubmit, initialData }: ProductFormProps) => {
         >
           Cancel
         </Button>
-        <Button type="submit" isLoading={isSubmitting}>
+        <Button type="submit" variant="primary" isLoading={isSubmitting}>
           Save Product
         </Button>
       </div>

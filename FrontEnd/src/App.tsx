@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import Layout from './components/layout/Layout';
@@ -13,6 +13,7 @@ import ProductAdd from './pages/products/ProductAdd';
 import CategoryList from './pages/products/CategoryList';
 import CategoryForm from './pages/products/CategoryForm';
 import ProductForm from './components/products/ProductForm';
+import Card from './components/ui/Card';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import { ToastContainer } from 'react-toastify';
@@ -41,6 +42,7 @@ const CategoryEdit = () => {
         setCategory(response.data);
       } catch (error) {
         console.error('Error fetching category:', error);
+        toast.error('Failed to load category');
         navigate('/products/categories');
       }
     };
@@ -50,12 +52,27 @@ const CategoryEdit = () => {
   if (!category) return null;
 
   return (
-    <CategoryForm
-      initialData={category}
-      onSubmit={async (data) => {
-        await axios.put(`http://localhost:8000/categories/${id}`, data);
-      }}
-    />
+    <div className="space-y-6 animate-fade-in">
+      <header>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Category</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Update category details</p>
+      </header>
+      <Card title="Edit Category">
+        <CategoryForm
+          initialData={category}
+          onSubmit={async (data) => {
+            try {
+              await axios.put(`http://localhost:8000/categories/${id}`, data);
+              toast.success('Category updated');
+              navigate('/products/categories');
+            } catch (error) {
+              console.error('Error updating category:', error);
+              toast.error('Failed to update category');
+            }
+          }}
+        />
+      </Card>
+    </div>
   );
 };
 
@@ -71,6 +88,7 @@ const ProductEdit = () => {
         setProduct(response.data);
       } catch (error) {
         console.error('Error fetching product:', error);
+        toast.error('Failed to load product');
         navigate('/products');
       }
     };
@@ -85,12 +103,18 @@ const ProductEdit = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Product</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">Update product details</p>
       </header>
-      <Card>
+      <Card title="Edit Product">
         <ProductForm
           initialData={product}
           onSubmit={async (data) => {
-            await axios.put(`http://localhost:8000/products/${id}`, data);
-            navigate('/products');
+            try {
+              await axios.put(`http://localhost:8000/products/${id}`, data);
+              toast.success('Product updated');
+              navigate('/products');
+            } catch (error) {
+              console.error('Error updating product:', error);
+              toast.error('Failed to update product');
+            }
           }}
         />
       </Card>
@@ -132,11 +156,26 @@ function App() {
             <Route path="categories">
               <Route index element={<CategoryList />} />
               <Route path="add" element={
-                <CategoryForm 
-                  onSubmit={async (data) => {
-                    await axios.post('http://localhost:8000/categories', data);
-                  }}
-                />
+                <div className="space-y-6 animate-fade-in">
+                  <header>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Category</h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">Create a new category</p>
+                  </header>
+                  <Card title="New Category">
+                    <CategoryForm 
+                      onSubmit={async (data) => {
+                        try {
+                          await axios.post('http://localhost:8000/categories', data);
+                          toast.success('Category created');
+                          navigate('/products/categories');
+                        } catch (error) {
+                          console.error('Error creating category:', error);
+                          toast.error('Failed to create category');
+                        }
+                      }}
+                    />
+                  </Card>
+                </div>
               } />
               <Route path=":id/edit" element={<CategoryEdit />} />
             </Route>
