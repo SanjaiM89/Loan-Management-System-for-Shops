@@ -1,22 +1,57 @@
+import { useState, useEffect } from 'react';
 import { Users, Package, IndianRupee, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Stat from '../components/ui/Stat';
-import { dashboardStats } from '../data/mockData';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '../utils/currency';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
+interface DashboardStats {
+  totalCustomers: number;
+  totalLoans: number;
+  totalUnpaidAmount: number;
+  totalPaidAmount: number;
+}
+
+interface ChartDataPoint {
+  name: string;
+  loans: number;
+  collections: number;
+}
 
 const Dashboard = () => {
-  // Mock data for the chart
-  const chartData = [
-    { name: 'Jan', loans: 4000, collections: 2400 },
-    { name: 'Feb', loans: 3000, collections: 1398 },
-    { name: 'Mar', loans: 2000, collections: 9800 },
-    { name: 'Apr', loans: 2780, collections: 3908 },
-    { name: 'May', loans: 1890, collections: 4800 },
-    { name: 'Jun', loans: 2390, collections: 3800 },
-  ];
-  
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCustomers: 0,
+    totalLoans: 0,
+    totalUnpaidAmount: 0,
+    totalPaidAmount: 0
+  });
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get('http://localhost:8000/dashboard');
+        setStats(response.data.stats);
+        setChartData(response.data.chartData);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return <div className="text-center p-6">Loading...</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <header className="mb-8">
@@ -24,40 +59,37 @@ const Dashboard = () => {
         <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back to your loan management dashboard</p>
       </header>
       
-      {/* Stats and Chart Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Stats Cards */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           <Stat 
             title="Total Customers" 
-            value={dashboardStats.totalCustomers} 
+            value={stats.totalCustomers} 
             icon={<Users className="h-5 w-5" />}
             change={{ value: 12, type: 'increase' }}
           />
           
           <Stat 
             title="Total Loans" 
-            value={dashboardStats.totalLoans} 
+            value={stats.totalLoans} 
             icon={<Package className="h-5 w-5" />}
             change={{ value: 8, type: 'increase' }}
           />
           
           <Stat 
             title="Outstanding Loans" 
-            value={formatCurrency(dashboardStats.totalUnpaidAmount)} 
+            value={formatCurrency(stats.totalUnpaidAmount)} 
             icon={<IndianRupee className="h-5 w-5" />}
             change={{ value: 5, type: 'increase' }}
           />
           
           <Stat 
             title="Total Collections" 
-            value={formatCurrency(dashboardStats.totalPaidAmount)} 
+            value={formatCurrency(stats.totalPaidAmount)} 
             icon={<TrendingUp className="h-5 w-5" />}
             change={{ value: 16, type: 'increase' }}
           />
         </div>
 
-        {/* Chart Card */}
         <div className="lg:col-span-1">
           <Card className="h-full">
             <h2 className="text-lg font-semibold mb-4">Loan Activity</h2>
@@ -91,7 +123,6 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link to="/customers/add">
           <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary-500">

@@ -1,6 +1,8 @@
 import Card from '../../components/ui/Card';
 import CustomerForm from '../../components/customers/CustomerForm';
 import DashboardButton from '../../components/ui/DashboardButton';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const CustomerAdd = () => {
   return (
@@ -12,7 +14,18 @@ const CustomerAdd = () => {
       </header>
       
       <Card>
-        <CustomerForm />
+        <CustomerForm
+          onSubmit={async (data) => {
+            try {
+              await axios.post('http://localhost:8000/customers', data);
+              toast.success('Customer created');
+              navigate('/customers');
+            } catch (error) {
+              console.error('Error creating customer:', error);
+              toast.error('Failed to create customer');
+            }
+          }}
+        />
       </Card>
     </div>
   );

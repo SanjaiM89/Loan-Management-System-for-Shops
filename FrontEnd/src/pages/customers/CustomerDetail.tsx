@@ -3,55 +3,91 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, MapPin, Users, IndianRupee, Check } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { getCustomerById, getLoansByCustomerId, markLoanAsPaid } from '../../data/mockData';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import { formatCurrency } from '../../utils/currency';
 
-// Tab type definition
 type TabType = 'loans' | 'details' | 'history';
+
+interface Customer {
+  _id: string;
+  name: string;
+  mobileNumber: string;
+  address: string;
+  photo?: string;
+  createdAt: string;
+  totalLoans: number;
+  unpaidLoans: number;
+  lastLoanDate?: string;
+}
+
+interface Loan {
+  _id: string;
+  customerId: string;
+  productName: string;
+  amount: number;
+  loanDate: string;
+  dueDate: string;
+  status: 'paid' | 'unpaid';
+  paymentDate?: string;
+}
 
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('loans');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Get customer data
-  const customer = id ? getCustomerById(id) : undefined;
-  const customerLoans = id ? getLoansByCustomerId(id) : [];
-  
-  // Redirect if customer not found
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customerLoans, setCustomerLoans] = useState<Loan[]>([]);
+
   useEffect(() => {
-    if (id && !customer) {
-      navigate('/customers', { replace: true });
-    }
-  }, [id, customer, navigate]);
-  
-  if (!customer) {
-    return <div>Loading...</div>;
-  }
-  
-  // Handle mark as paid
+    const fetchCustomer = async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+        const [customerResponse, loansResponse] = await Promise.all([
+          axios.get(`http://localhost:8000/customers/${id}`),
+          axios.get(`http://localhost:8000/customers/${id}/loans`)
+        ]);
+        setCustomer(customerResponse.data);
+        setCustomerLoans(loansResponse.data);
+      } catch (error) {
+        console.error('Error fetching customer:', error);
+        toast.error('Failed to load customer');
+        navigate('/customers', { replace: true });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCustomer();
+  }, [id, navigate]);
+
   const handleMarkAsPaid = async (loanId: string) => {
     setIsLoading(true);
-    
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const success = markLoanAsPaid(loanId);
-      if (!success) {
-        console.error('Failed to mark loan as paid');
+      await axios.put(`http://localhost:8000/customers/${id}/loans/${loanId}/mark-paid`);
+      toast.success('Loan marked as paid');
+      const updatedLoans = customerLoans.map(loan =>
+        loan._id === loanId ? { ...loan, status: 'paid', paymentDate: new Date().toISOString().split('T')[0] } : loan
+      );
+      setCustomerLoans(updatedLoans);
+      if (customer) {
+        setCustomer({ ...customer, unpaidLoans: customer.unpaidLoans - 1 });
       }
     } catch (error) {
       console.error('Error marking loan as paid:', error);
+      toast.error('Failed to mark loan as paid');
     } finally {
       setIsLoading(false);
     }
   };
-  
+
+  if (isLoading || !customer) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Back Navigation */}
       <div>
         <Link 
           to="/customers" 
@@ -62,7 +98,6 @@ const CustomerDetail = () => {
         </Link>
       </div>
       
-      {/* Customer Profile Header */}
       <Card className="p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center">
@@ -102,13 +137,13 @@ const CustomerDetail = () => {
             </Button>
             <Button 
               icon={<IndianRupee className="h-4 w-4" />}
+              onClick={() => toast.info('New loan creation not implemented yet')}
             >
               New Loan
             </Button>
           </div>
         </div>
         
-        {/* Summary Info */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Customer Since</p>
@@ -126,12 +161,11 @@ const CustomerDetail = () => {
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Last Loan</p>
-            <p className="font-medium text-gray-900 dark:text-white">{customer.lastLoanDate}</p>
+            <p className="font-medium text-gray-900 dark:text-white">{customer.lastLoanDate || 'N/A'}</p>
           </div>
         </div>
       </Card>
       
-      {/* Tabs */}
       <div>
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-6">
@@ -168,14 +202,16 @@ const CustomerDetail = () => {
           </nav>
         </div>
         
-        {/* Tab Content */}
         <div className="mt-4">
-          {/* Loans Tab */}
           {activeTab === 'loans' && (
             <Card>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Loan Records</h2>
-                <Button icon={<IndianRupee className="h-4 w-4" />} size="small">
+                <Button 
+                  icon={<IndianRupee className="h-4 w-4" />} 
+                  size="small"
+                  onClick={() => toast.info('New loan creation not implemented yet')}
+                >
                   New Loan
                 </Button>
               </div>
@@ -195,7 +231,7 @@ const CustomerDetail = () => {
                   <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-gray-700">
                     {customerLoans.length > 0 ? (
                       customerLoans.map((loan) => (
-                        <tr key={loan.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <tr key={loan._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                             {loan.productName}
                           </td>
@@ -221,7 +257,7 @@ const CustomerDetail = () => {
                                 size="small"
                                 variant="outline"
                                 icon={<Check className="h-4 w-4" />}
-                                onClick={() => handleMarkAsPaid(loan.id)}
+                                onClick={() => handleMarkAsPaid(loan._id)}
                                 isLoading={isLoading}
                                 disabled={isLoading}
                               >
@@ -248,7 +284,6 @@ const CustomerDetail = () => {
             </Card>
           )}
           
-          {/* Details Tab */}
           {activeTab === 'details' && (
             <Card>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Details</h2>
@@ -289,7 +324,7 @@ const CustomerDetail = () => {
                     </div>
                     <div>
                       <dt className="text-sm text-gray-500 dark:text-gray-400">Last Loan Date</dt>
-                      <dd className="mt-1 text-gray-900 dark:text-white">{customer.lastLoanDate}</dd>
+                      <dd className="mt-1 text-gray-900 dark:text-white">{customer.lastLoanDate || 'N/A'}</dd>
                     </div>
                   </dl>
                 </div>
@@ -308,7 +343,6 @@ const CustomerDetail = () => {
             </Card>
           )}
           
-          {/* Payment History Tab */}
           {activeTab === 'history' && (
             <Card>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment History</h2>
@@ -328,7 +362,7 @@ const CustomerDetail = () => {
                       {customerLoans
                         .filter(loan => loan.status === 'paid')
                         .map(loan => (
-                          <tr key={loan.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <tr key={loan._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <td className="px-4 md:px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                               {loan.productName}
                             </td>
